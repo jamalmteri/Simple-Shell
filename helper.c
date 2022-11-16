@@ -1,128 +1,103 @@
 #include "shell.h"
 
 /**
- * _getline - Gets line of user input
- * Return: Pointer to buffer of user input
+ * tokenizer - tokenizes input and stores it into an array
+ *@input_string: input to be parsed
+ *@delim: delimiter to be used, needs to be one character string
+ *
+ *Return: array of tokens
  */
-char *_getline(void)
-{
-	int temp;
-	char *line = NULL;
-	size_t size = 0;
 
-	temp = getline(&line, &size, stdin);
-	if (temp == EOF)
+char **tokenizer(char *input_string, char *delim)
+{
+	int num_delim = 0;
+	char **av = NULL;
+	char *token = NULL;
+	char *save_ptr = NULL;
+
+	token = _strtok_r(input_string, delim, &save_ptr);
+
+	while (token != NULL)
 	{
-		if (isatty(STDIN_FILENO))
-			write(1, "\n", 1);
-		exit(0);
+		av = _realloc(av, sizeof(*av) * num_delim, sizeof(*av) * (num_delim + 1));
+		av[num_delim] = token;
+		token = _strtok_r(NULL, delim, &save_ptr);
+		num_delim++;
 	}
-	return (line);
+
+	av = _realloc(av, sizeof(*av) * num_delim, sizeof(*av) * (num_delim + 1));
+	av[num_delim] = NULL;
+
+	return (av);
 }
-/**
- * split_line - Splits line into args
- * @line: Line of user input
- * Return: Array of args of user input
- */
-char **split_line(char *line)
-{
-	size_t buffer_size = TOKENS_BUFFER_SIZE;
-	char **tokens = malloc(sizeof(char *) * buffer_size);
-	char *token;
-	int pos = 0;
 
-	if (!tokens)
-	{
-		perror("Could not allocate space for tokens\n");
-		exit(0);
-	}
-	token = strtok(line, TOKEN_DELIMITERS);
-	while (token)
-	{
-		tokens[pos] = token;
-		token = strtok(NULL, TOKEN_DELIMITERS);
-		pos++;
-	}
-	tokens[pos] = NULL;
-	return (tokens);
+/**
+ *print - prints a string to stdout
+ *@string: string to be printed
+ *@stream: stream to print out to
+ *
+ *Return: void, return nothing
+ */
+void print(char *string, int stream)
+{
+	int i = 0;
+
+	for (; string[i] != '\0'; i++)
+		write(stream, &string[i], 1);
 }
-/**
- * check_for_builtins - Checks for builtins
- * @args: Arguments passed from prompt
- * @line: Buffer with line of input from user
- * @env: Environment
- * Return: 1 if builtins exist, 0 if they don't
- */
-int check_for_builtins(char **args, char *line, char **env)
-{
-	builtins_t list[] = {
-		{"exit", exit_shell},
-		{"env", env_shell},
-		{NULL, NULL}
-	};
-	int i;
 
-	for (i = 0; list[i].arg != NULL; i++)
+/**
+ *remove_newline - removes new line from a string
+ *@str: string to be used
+ *
+ *
+ *Return: void
+ */
+
+void remove_newline(char *str)
+{
+	int i = 0;
+
+	while (str[i] != '\0')
 	{
-		if (_strcmp(list[i].arg, args[0]) == 0)
-		{
-			list[i].builtin(args, line, env);
-			return (1);
-		}
+		if (str[i] == '\n')
+			break;
+		i++;
 	}
-	return (0);
+	str[i] = '\0';
 }
-/**
- * launch_prog - Forks and launches unix cmd
- * @args: Args for cmd
- * Return: 1 on success
- */
-int launch_prog(char **args)
-{
-	pid_t pid, wpid;
-	int status;
 
-	pid = fork();
-	if (pid == 0)
-	{
-		if (execve(args[0], args, NULL) == -1)
-		{
-			perror("Failed to execute command\n");
-			exit(0);
-		}
-	}
-	else if (pid < 0)
-	{
-		perror("Error forking\n");
-		exit(0);
-	}
-	else
-	{
-		do {
-			wpid = waitpid(pid, &status, WUNTRACED);
-		} while (!WIFEXITED(status) && WIFSIGNALED(status));
-	}
-	(void)wpid;
-	return (1);
+/**
+ *_strcpy - copies a string to another buffer
+ *@source: source to copy from
+ *@dest: destination to copy to
+ *
+ * Return: void
+ */
+
+void _strcpy(char *source, char *dest)
+{
+	int i = 0;
+
+	for (; source[i] != '\0'; i++)
+		dest[i] = source[i];
+	dest[i] = '\0';
 }
-/**
- * builtins_checker - Checks for built-ins
- * @args: Arguments passed from prompt
- * Return: 1 if builtins exist, 0 if they don't
- */
-int builtins_checker(char **args)
-{
-	int i;
-	builtins_t list[] = {
-		{"exit", exit_shell},
-		{"env", env_shell},
-		{NULL, NULL}
-	};
 
-	for (i = 0; list[i].arg != NULL; i++)
-	{
-		if (_strcmp(list[i].arg, args[0]) == 0)
-			return (1);
-	}
-	return (0);
+/**
+ *_strlen - counts string length
+ *@string: string to be counted
+ *
+ * Return: length of the string
+ */
+
+int _strlen(char *string)
+{
+	int len = 0;
+
+	if (string == NULL)
+		return (len);
+	for (; string[len] != '\0'; len++)
+		;
+	return (len);
 }
